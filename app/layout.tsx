@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { THEME_BOOT_SCRIPT } from '@/lib/theme-boot'
 import './globals.css'
+import './scribe.css'
 
 export const metadata: Metadata = {
   title: 'SCRIBE',

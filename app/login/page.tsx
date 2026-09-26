@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { AlertCircle, GraduationCap, Loader2, Presentation, ShieldCheck } from 'lucide-react'
 import { auth, db, isSchoolEmail, SCHOOL_DOMAIN } from '@/lib/firebase'
+import { ScribeAvatar, SCRIBE_GREETING } from '@/components/scribe/avatar'
 import { homeFor, signInWithGoogle } from '@/lib/session'
 import type { Role } from '@/types'
 
@@ -56,6 +57,11 @@ export default function LoginPage() {
   }
 
   return <main className="login-shell">
+    <div className="login-layout">
+    <div className="login-hero">
+      <p className="speech down">{SCRIBE_GREETING}<small>Sign in with your SorSU Google account to get started.</small></p>
+      <ScribeAvatar size={320} />
+    </div>
     <section className="login-card" aria-labelledby="login-title">
       <span className="brand">SCRIBE</span>
       <h1 id="login-title">Sign in to SCRIBE</h1>
@@ -76,5 +82,6 @@ export default function LoginPage() {
 
       <p className="login-note">Only <strong>@{SCHOOL_DOMAIN}</strong> Google accounts can sign in. Instructors must be verified by a CICT admin first.</p>
     </section>
+    </div>
   </main>
 }

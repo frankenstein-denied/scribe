@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, CheckCircle2, ExternalLink, FileText, ListChecks, Loader2, Menu, Send, X } from 'lucide-react'
 import { StudentSidebar } from '@/components/student/sidebar'
+import { ScribeAvatar } from '@/components/scribe/avatar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { signOut, useSession } from '@/lib/session'
 import { loadLibrary, type Library, type Passage } from '@/lib/library'
@@ -16,6 +17,7 @@ import { listSets, MAX_STUDY_SETS, putSet, type SavedStudySet } from '@/lib/stud
 import { archive, archiveOpenChat, chatKey, deleteChat, listChats, persistArchive, readCurrent, type ChatCell, type ChatPart, type ChatTurn, type RecentChat } from '@/lib/recents'
 import { termCounts, words } from '@/lib/topics'
 import { subjects, type User } from '@/types'
+import { Analytics } from "@vercel/analytics/next"  
 import './student.css'
 
 type Cell = ChatCell
@@ -128,6 +130,13 @@ export default function Page() {
 
   useEffect(() => { if (uid) try { sessionStorage.setItem(chatKey(uid), JSON.stringify({ id: chatId, turns })) } catch {} }, [turns, chatId, uid])
 
+  // /?ask=… comes from the SCRIBE companion on other dashboards: ask it here once the materials are ready.
+  const pendingAsk = useRef<string | null>(null)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('ask')
+    if (q) { pendingAsk.current = q; window.history.replaceState(null, '', '/') }
+  }, [])
+
   const index = useMemo(() => (library ? buildIndex(library.passages) : null), [library])
   // Starter requests built from what's actually uploaded, showing off what SCRIBE understands.
   const suggestions = useMemo(() => {
@@ -169,7 +178,7 @@ export default function Page() {
     if (!question.trim() || !index || !library || running) return
     const id = `t-${Date.now()}`
     // The NLP layer works out what's being asked for (answer, reviewer, file list, summary, comparison, quiz…).
-    const reply = respond(question, library, index, scope)
+    const reply = respond(question, library, index, scope, user?.role === 'Professor' ? user.name : undefined)
     const parts: Part[] = reply.parts.map((part, pi) => ({
       label: part.label, query: part.query,
       cells: part.cells.map((c, ci) => ({ ...c, id: `${id}-${pi}-${ci}` })),
@@ -194,6 +203,14 @@ export default function Page() {
     }, total > 8 ? 90 : 220)
     scrollDown()
   }
+
+  useEffect(() => {
+    if (!pendingAsk.current || !index || !library || running) return
+    const q = pendingAsk.current
+    pendingAsk.current = null
+    ask(q)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, library, running])
 
   const clearView = () => { setInput(''); setScope(null); setSelecting(false); setSelected(new Set()); setSource(null); setDialog(null) }
 
@@ -285,8 +302,11 @@ export default function Page() {
       <div className="chat-scroll" ref={scroller}>
         {turns.length === 0
           ? <section className="empty-state">
-            <h1>What are we reviewing today, {user.firstName}?</h1>
-            <p>{!ready ? 'Loading your course materials…' : empty ? 'No course materials yet. Once your instructors upload files, you can ask about them here.' : `Answers come straight from ${library.materialCount} file${library.materialCount === 1 ? '' : 's'} your CICT instructors uploaded, each with the page it came from.`}</p>
+            <div className="scribe-hello">
+              <ScribeAvatar size={220} />
+              <div className="speech left"><strong>Hello {user.firstName}, I’m SCRIBE!</strong>What can I do for you today?</div>
+            </div>
+            <p>{!ready ? 'Give me a moment, I’m getting your course materials…' : empty ? 'Your instructors haven’t uploaded anything yet. Once they do, I can answer from their files.' : `I answer straight from the ${library.materialCount} file${library.materialCount === 1 ? '' : 's'} your CICT instructors uploaded, and I’ll always show you the page it came from.`}</p>
           </section>
           : <div className="conversation">{turns.map(turn => {
             const isRunning = running?.turnId === turn.id
@@ -294,9 +314,9 @@ export default function Page() {
             return <Fragment key={turn.id}>
               <div className="message-row user"><div className="message-content"><div className="user-bubble">{turn.question}</div>{turn.scope && <small className="scope-note">Only {subjects.find(s => s.id === turn.scope)?.code}</small>}</div></div>
               <div className="message-row assistant">
-                <div className="scribe-mark">S</div>
+                <ScribeAvatar badge size={34} />
                 <div className="message-content notebook">
-                  {turn.note && <p className="nb-note">{turn.note}</p>}
+                  {turn.note && <p className="nb-note speech">{turn.note}</p>}
                   {turn.parts.map((part, pi) => {
                     const terms = queryTerms(part.query)
                     const multi = turn.parts.length > 1

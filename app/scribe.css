@@ -1,0 +1,90 @@
+/* SCRIBE's avatar, its floating companion chat, and the login backdrop. Shared by every page (imported in layout). */
+
+/* Round badge: zoomed on the face and shoulders. */
+.scribe-badge { display:inline-block; flex:none; border-radius:50%; overflow:hidden; background:linear-gradient(160deg, var(--tint), var(--maroon-50)); box-shadow:0 0 0 2px var(--surface), 0 0 0 3px var(--line-strong); }
+.scribe-badge img { width:100%; height:100%; object-fit:cover; object-position:50% 0; transform:scale(1.45); transform-origin:50% 10%; display:block; }
+.scribe-figure { display:block; width:auto; user-select:none; }
+
+/* Speech bubble used for SCRIBE's lines. */
+.speech { position:relative; background:var(--surface); color:var(--ink); border:1px solid var(--line-2); border-radius:16px; padding:10px 14px; box-shadow:0 6px 20px #3e1c2418; line-height:1.45; }
+.speech::after { content:''; position:absolute; width:14px; height:14px; background:inherit; border-left:1px solid var(--line-2); border-bottom:1px solid var(--line-2); }
+.speech.left::after { left:-8px; bottom:18px; transform:rotate(45deg); }
+.speech.down::after { left:50%; bottom:-8px; transform:translateX(-50%) rotate(-45deg); }
+
+/* ---- Login ---- */
+.login-shell { position:relative; isolation:isolate; overflow:hidden; background:var(--maroon-900); }
+.login-shell::before { content:''; position:absolute; inset:-30px; z-index:-2; background:url('/landing-blur.jpg') center/cover no-repeat; filter:saturate(1.05); transform:scale(1.04); }
+.login-shell::after { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(160deg, #4a0e17b3 0%, #7a1a2a73 45%, #211b1ccc 100%); }
+.login-layout { display:flex; align-items:center; justify-content:center; gap:28px; width:min(980px,100%); }
+.login-hero { display:flex; flex-direction:column; align-items:center; gap:14px; color:#fff; flex:none; }
+.login-hero .speech { max-width:300px; font-size:17px; font-weight:600; text-align:center; animation:pop .5s ease both; }
+.login-hero .speech small { display:block; font-size:13px; font-weight:400; color:var(--muted); margin-top:4px; }
+.login-hero .scribe-figure { filter:drop-shadow(0 18px 30px #0008); animation:rise .6s ease both; }
+.login-card { box-shadow:0 24px 60px #0006; }
+@keyframes pop { from { opacity:0; transform:translateY(8px) scale(.96); } }
+@keyframes rise { from { opacity:0; transform:translateY(16px); } }
+@media (max-width:860px) {
+  .login-layout { flex-direction:column; gap:10px; }
+  .login-hero { flex-direction:row; align-items:flex-end; gap:6px; }
+  .login-hero .scribe-figure { height:130px !important; }
+  .login-hero .speech { font-size:14px; max-width:230px; text-align:left; }
+  /* SCRIBE stands to the right of the bubble on phones, so the tail points right. */
+  .login-hero .speech.down::after { left:auto; right:-8px; bottom:18px; transform:rotate(-135deg); }
+}
+
+/* ---- Chat page ---- */
+.message-row.assistant > .scribe-badge { margin-top:2px; }
+.empty-state .scribe-hello { display:flex; align-items:flex-end; gap:14px; margin-bottom:10px; text-align:left; }
+.empty-state .scribe-hello .scribe-figure { filter:drop-shadow(0 12px 18px #3e1c2426); }
+.empty-state .scribe-hello .speech { max-width:360px; font-size:16px; margin-bottom:34px; animation:pop .5s ease both; }
+.empty-state .scribe-hello .speech strong { display:block; font-family:Georgia, serif; font-weight:400; font-size:24px; line-height:1.25; color:var(--maroon-900); margin-bottom:4px; }
+.nb-note.speech { margin:0 0 4px; font-size:14px; color:var(--ink); border-top-left-radius:4px; max-width:640px; }
+.nb-note.speech::after { display:none; }
+@media (max-width:700px) {
+  .empty-state .scribe-hello { flex-direction:column; align-items:center; text-align:center; }
+  .empty-state .scribe-hello .speech { margin-bottom:0; }
+  .empty-state .scribe-hello .speech.left::after { left:50%; bottom:auto; top:-8px; transform:translateX(-50%) rotate(135deg); }
+}
+
+/* ---- Floating companion ---- */
+.scribe-widget { position:fixed; right:22px; bottom:22px; z-index:40; display:flex; flex-direction:column; align-items:flex-end; gap:10px; pointer-events:none; }
+.scribe-widget > * { pointer-events:auto; }
+.scribe-launcher { border:0; background:none; padding:0; border-radius:50%; cursor:pointer; transition:transform .15s; filter:drop-shadow(0 8px 16px #3e1c2440); }
+.scribe-launcher:hover { transform:translateY(-2px) scale(1.04); }
+.scribe-launcher:focus-visible { outline:3px solid #c97886; outline-offset:3px; }
+.scribe-launcher .scribe-badge { box-shadow:0 0 0 3px var(--surface), 0 0 0 5px var(--maroon-700); }
+.scribe-teaser { max-width:240px; text-align:left; font:inherit; font-size:14px; font-weight:600; background:var(--surface); color:var(--ink); border:1px solid var(--line-2); border-radius:16px 16px 4px 16px; padding:10px 14px; box-shadow:0 8px 24px #3e1c2426; cursor:pointer; animation:pop .4s ease both; }
+.scribe-panel { width:min(380px, calc(100vw - 32px)); height:min(560px, calc(100vh - 120px)); display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 20px 50px #3e1c2433; overflow:hidden; animation:pop .25s ease both; }
+.scribe-panel > header { display:flex; align-items:center; gap:10px; padding:12px 12px 12px 14px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--maroon-50), var(--surface)); }
+.scribe-panel > header strong, .scribe-panel > header span { display:block; line-height:1.25; }
+.scribe-panel > header strong { color:var(--accent); letter-spacing:.08em; font-size:14px; }
+.scribe-panel > header span { font-size:12px; color:var(--muted); }
+.scribe-panel > header .icon-button { margin-left:auto; }
+.scribe-thread { flex:1; overflow:auto; padding:14px 12px; display:flex; flex-direction:column; gap:12px; }
+.scribe-msg { display:flex; gap:8px; align-items:flex-end; }
+.scribe-msg.user { justify-content:flex-end; }
+.scribe-msg .bubble { max-width:84%; padding:9px 12px; border-radius:16px; font-size:14px; line-height:1.45; overflow-wrap:anywhere; }
+.scribe-msg.scribe .bubble { background:var(--hover); border:1px solid var(--line); border-bottom-left-radius:4px; }
+.scribe-msg.user .bubble { background:var(--maroon-700); color:#fff; border-bottom-right-radius:4px; }
+.scribe-msg .bubble p { margin:0; }
+.scribe-msg .bubble.typing { display:flex; align-items:center; gap:6px; color:var(--muted); }
+.scribe-msg .bubble.typing svg { width:14px; }
+.mini-cells { list-style:none; margin:8px 0 4px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.mini-cells li { background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--line-strong); border-radius:8px; padding:7px 9px; font-size:13px; }
+.mini-cells strong, .mini-cells span, .mini-cells small { display:block; }
+.mini-cells strong { color:var(--maroon-900); font-size:13px; }
+.mini-cells small { color:var(--muted-2); font-size:11px; margin-top:3px; }
+.scribe-msg .text-button { display:inline-block; margin-top:4px; padding:0; text-decoration:none; font-weight:600; }
+.scribe-chips { display:flex; flex-wrap:wrap; gap:6px; padding:0 12px 8px; }
+.scribe-chips button { border:1px solid var(--line-2); background:var(--surface); color:var(--accent); border-radius:999px; padding:5px 10px; font-size:12px; text-align:left; }
+.scribe-chips button:hover { background:var(--maroon-50); border-color:var(--line-strong); }
+.scribe-input { display:flex; gap:8px; padding:10px 12px 12px; border-top:1px solid var(--line); }
+.scribe-input input { flex:1; min-width:0; font:inherit; font-size:14px; border:1px solid var(--line-2); border-radius:999px; padding:9px 14px; background:var(--surface); color:var(--ink); }
+.scribe-input input:focus-visible { outline:3px solid #c97886; outline-offset:1px; }
+@media (max-width:700px) {
+  .scribe-widget { right:12px; bottom:12px; }
+  .scribe-widget.open { left:12px; }
+  .scribe-panel { width:100%; height:min(520px, calc(100vh - 100px)); }
+  .scribe-launcher .scribe-badge { width:52px !important; height:52px !important; }
+}
+@media (prefers-reduced-motion:reduce) { .scribe-launcher { transition:none; } }

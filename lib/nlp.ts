@@ -166,11 +166,13 @@ export function findComparison(text: string): [string, string] | undefined {
 
 const POLITE = /^(hey|hi|hello|yo|scribe|please|pls|kindly)[,!.\s]+|^(can|could|would|will) you( please)?\s+|^i (want|need) (you )?to\s+|^help me( to)?\s+/i
 
-export function parse(input: string, ctx: { owners: string[]; subjects: Subject[]; vocab: Map<string, number>; now?: Date }): Plan {
+export function parse(input: string, ctx: { owners: string[]; subjects: Subject[]; vocab: Map<string, number>; now?: Date; self?: string }): Plan {
   let text = input.trim()
   for (let i = 0; i < 3; i++) text = text.replace(POLITE, '')
   const intent = detectIntent(text)
   const { names, used } = findOwners(text, ctx.owners, ctx.vocab)
+  // An instructor asking about "my files" / "what I uploaded" means themselves.
+  if (ctx.self && !names.length && /\b(my|i|i've|ive)\b.{0,40}\b(upload(ed|s)?|files?|materials?|slides|pdfs?|handouts|lectures)\b|\bmy (upload|file|material|slide|lecture)/i.test(text)) names.push(ctx.self)
   const subjects = findSubjects(text, ctx.subjects)
   const formats = findFormats(text)
   const { since, recent } = findTime(text, ctx.now)

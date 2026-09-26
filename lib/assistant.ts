@@ -37,7 +37,7 @@ function filesInScope(lib: Library, plan: Plan, scope: string | null): { files: 
   return { files, dropped }
 }
 
-const FILE_WORDS = /(slides?|deck|pdfs?|files?|lectures?|handouts?|modules?|chapters?|documents?|presentations?|readings?|powerpoint|pptx|docx)/i
+const FILE_WORDS = /\b(slides?|deck|pdfs?|files?|lectures?|handouts?|modules?|chapters?|documents?|presentations?|readings?|powerpoint|pptx|docx)\b/i
 
 /**
  * A file the request names by title ("summarize the gradient descent slides"). Only when the student refers to a
@@ -173,9 +173,9 @@ function browse(lib: Library, plan: Plan, files: MaterialInfo[]): Reply {
   const label = `Files${plan.topic ? ` about ${plan.topic}` : ''}${scope ? ` ${scope}` : ''}`
   if (!shown.length) {
     const who = [...new Set(lib.materials.map(m => m.ownerName))]
-    return { intent: 'browse', parts: [notFound(label)], note: `No files match. Instructors with uploads: ${who.join(', ') || 'none yet'}.` }
+    return { intent: 'browse', parts: [notFound(label)], note: `I couldn’t find any files like that. ${who.length ? `These instructors have uploads so far: ${who.join(', ')}.` : 'No instructor has uploaded anything yet.'}` }
   }
-  return { intent: 'browse', note: `${plural(shown.length, 'file')} ${scope || 'uploaded by your instructors'}.`, parts: [{ label, query: plan.topic, cells: shown.map(m => materialCell(lib, m)) }] }
+  return { intent: 'browse', note: `Here ${shown.length === 1 ? 'is the file' : `are the ${shown.length} files`} ${scope || 'your instructors uploaded'}. Want me to summarize one, turn it into a reviewer, or quiz you on it? Just ask!`, parts: [{ label, query: plan.topic, cells: shown.map(m => materialCell(lib, m)) }] }
 }
 
 function reviewer(lib: Library, index: Index, plan: Plan, files: MaterialInfo[], input: string): Reply {
@@ -190,7 +190,7 @@ function reviewer(lib: Library, index: Index, plan: Plan, files: MaterialInfo[],
     pool = passagesOf(lib, named ? [named] : files).slice(0, 60)
   }
   const about = named ? named.title : aboutText(plan, files)
-  if (!pool.length) return { intent: 'reviewer', parts: [notFound(`Reviewer: ${about}`, plan.topic)], note: `Nothing in the uploaded materials covers “${about}” yet.` }
+  if (!pool.length) return { intent: 'reviewer', parts: [notFound(`Reviewer: ${about}`, plan.topic)], note: `I couldn’t find anything about “${about}” in the uploaded materials yet.` }
 
   const byFile = new Map<string, Passage[]>()
   for (const p of pool) byFile.set(p.materialId, [...(byFile.get(p.materialId) ?? []), p])
@@ -209,7 +209,7 @@ function reviewer(lib: Library, index: Index, plan: Plan, files: MaterialInfo[],
   const cellCount = parts.reduce((a, p) => a + p.cells.length, 0)
   return {
     intent: 'reviewer', parts,
-    note: `Reviewer on ${about}: ${plural(gloss.length, 'key term')}, ${plural(lst.length, 'list')}, ${plural(cellCount - gloss.length - lst.length, 'main point')} from ${plural(byFile.size, 'file')}.${expansion.length ? ` Also covered related terms: ${expansion.slice(0, 4).join(', ')}.` : ''} Use Create quiz below to test yourself on it.`,
+    note: `Here’s your reviewer on ${about}! I pulled together ${plural(gloss.length, 'key term')}, ${plural(lst.length, 'list')} and ${plural(cellCount - gloss.length - lst.length, 'main point')} from ${plural(byFile.size, 'file')}.${expansion.length ? ` I also covered related terms: ${expansion.slice(0, 4).join(', ')}.` : ''} When you’re ready, tap Create quiz and I’ll test you on it.`,
   }
 }
 
@@ -217,13 +217,13 @@ function summarize(lib: Library, index: Index, plan: Plan, files: MaterialInfo[]
   const named = fileNamedBy(plan.topic, files, input) ?? (!plan.topic && files.length === 1 ? files[0] : undefined)
   if (named) {
     const picks = keySentences(passagesOf(lib, [named]), 6)
-    return { intent: 'summarize', note: `Summary of ${named.title}: the ${plural(picks.length, 'sentence')} that carry its main ideas, in reading order.`,
+    return { intent: 'summarize', note: `Here’s a quick summary of ${named.title}: the ${plural(picks.length, 'sentence')} that carry its main ideas, in reading order.`,
       parts: [{ label: `Summary · ${named.title}`, query: Object.keys(named.terms).slice(0, 6).join(' '), cells: picks.map(s => passageCell(s.passage, s.text)) }] }
   }
   const found = expandedSearch(index, plan.topic, { materialIds: new Set(files.map(f => f.id)), limit: 10, minCoverage: 0.5 })
-  if (!found.hits.length) return { intent: 'summarize', parts: [notFound(`Summary: ${plan.topic}`, plan.topic)], note: `Nothing in the uploaded materials covers “${plan.topic}” yet.` }
+  if (!found.hits.length) return { intent: 'summarize', parts: [notFound(`Summary: ${plan.topic}`, plan.topic)], note: `I couldn’t find anything about “${plan.topic}” in the uploaded materials yet.` }
   const picks = keySentences(found.hits.map(h => h.passage), 6, queryTerms(plan.topic))
-  return { intent: 'summarize', note: `Summary of “${plan.topic}” across ${plural(new Set(picks.map(p => p.passage.materialId)).size, 'file')}.`,
+  return { intent: 'summarize', note: `Here’s the gist of “${plan.topic}”, drawn from ${plural(new Set(picks.map(p => p.passage.materialId)).size, 'file')}.`,
     parts: [{ label: `Summary · ${cap(plan.topic)}`, query: plan.topic, cells: picks.map(s => passageCell(s.passage, s.text)) }] }
 }
 
@@ -240,11 +240,11 @@ function compare(lib: Library, index: Index, plan: Plan, files: MaterialInfo[]):
     { label: cap(b), query: b, cells: hb.map(h => passageCell(h.passage, h.excerpt)) },
   ]
   return { intent: 'compare', parts,
-    note: ha.length && hb.length ? `${cap(a)} vs ${b}, side by side.${shared.length ? ` Both passages talk about: ${shared.join(', ')}.` : ''}` : `Only part of this comparison is covered by the uploaded materials.` }
+    note: ha.length && hb.length ? `Let’s put ${a} and ${b} side by side.${shared.length ? ` Notice that both talk about ${shared.slice(0, 5).join(', ')}.` : ''}` : `I could only find part of this comparison in the uploaded materials.` }
 }
 
 function topics(lib: Library, plan: Plan, files: MaterialInfo[]): Reply {
-  if (!files.length) return { intent: 'topics', parts: [notFound('Topics')], note: 'No files match that.' }
+  if (!files.length) return { intent: 'topics', parts: [notFound('Topics')], note: 'I couldn’t find any files matching that.' }
   const total = new Map<string, number>()
   for (const f of files) for (const [t, c] of Object.entries(f.terms)) total.set(t, (total.get(t) ?? 0) + c)
   // Prefer phrases; drop single words already inside a listed phrase.
@@ -252,7 +252,7 @@ function topics(lib: Library, plan: Plan, files: MaterialInfo[]): Reply {
   const picked: string[] = []
   for (const t of ranked) if (picked.length < 15 && !picked.some(p => p.includes(t) || t.includes(p))) picked.push(t)
   const scope = describeScope(plan, files)
-  return { intent: 'topics', note: `Main topics across ${plural(files.length, 'file')}${scope ? ` ${scope}` : ''}. Ask about any of them.`,
+  return { intent: 'topics', note: `These are the main topics across ${plural(files.length, 'file')}${scope ? ` ${scope}` : ''}. Ask me about any of them!`,
     parts: [{ label: `Topics${scope ? ` ${scope}` : ''}`, query: picked.join(' '), cells: [{ kind: 'list', heading: 'Topics covered', excerpt: picked.map(cap).join('\n'), passage: lib.passages.find(p => p.materialId === files[0].id)! }] }] }
 }
 
@@ -263,20 +263,24 @@ function ask(index: Index, input: string, plan: Plan, files: MaterialInfo[], sco
   const parts = answer(index, question, scope, restrict ? new Set(files.map(f => f.id)) : undefined).map(p => ({
     label: p.label, query: p.query, cells: p.hits.map(h => passageCell(h.passage, h.excerpt)),
   }))
-  return { intent: 'ask', parts }
+  const found = parts.filter(p => p.cells.length).length
+  const note = !found ? 'I couldn’t find that in any uploaded file yet. Try different words, or ask your instructor to upload something on it.'
+    : parts.length > 1 ? (found === parts.length ? `You asked me ${parts.length} things, so I answered each one.` : `I found answers for ${found} of the ${parts.length} things you asked.`)
+    : 'Here’s what your materials say. Tap View source to see the full page.'
+  return { intent: 'ask', parts, note }
 }
 
 // ---- Entry point ----
 
-export function respond(input: string, lib: Library, index: Index, scope: string | null = null): Reply {
+export function respond(input: string, lib: Library, index: Index, scope: string | null = null, self?: string): Reply {
   const owners = [...new Set(lib.materials.map(m => m.ownerName))]
-  const plan = parse(input, { owners, subjects, vocab: index.df })
+  const plan = parse(input, { owners, subjects, vocab: index.df, self })
   const { files, dropped } = filesInScope(lib, plan, scope)
   // "a reviewer regarding machine learning" where Machine Learning is a subject with files: cover the subject.
   const subjectTitles = plan.subjectIds.flatMap(id => topicWords(subjects.find(s => s.id === id)?.title ?? ''))
   if (plan.topic && !dropped.length && subjectTitles.length && topicWords(plan.topic).every(w => subjectTitles.includes(w))) plan.topic = ''
   const restrict = !!(plan.owners.length || plan.formats.length || plan.since || plan.recent || (plan.subjectIds.length && !dropped.length))
-  const typo = plan.corrections.length ? `Showing results for ${plan.corrections.map(c => `“${c.to}”`).join(', ')} (you typed ${plan.corrections.map(c => `“${c.from}”`).join(', ')}). ` : ''
+  const typo = plan.corrections.length ? `I think you meant ${plan.corrections.map(c => `“${c.to}”`).join(', ')} (you typed ${plan.corrections.map(c => `“${c.from}”`).join(', ')}). ` : ''
 
   let reply: Reply
   if (plan.intent === 'browse') reply = browse(lib, plan, files)
@@ -290,9 +294,11 @@ export function respond(input: string, lib: Library, index: Index, scope: string
       ? { intent: 'quiz' as const, parts: [{ label: `Quiz material · ${named?.title ?? (describeScope(plan, files) || 'all files')}`, query: '', cells: mainPassages(passagesOf(lib, named ? [named] : files), 6).map(p => passageCell(p, excerptFor(p.text, []))) }] }
       : { ...ask(index, plan.topic, plan, files, scope, restrict), intent: 'quiz' as const }
     const n = base.parts.reduce((a, p) => a + p.cells.length, 0)
-    reply = { ...base, autoQuiz: n > 0, note: n ? `Found ${plural(n, 'cell')} to quiz you on. Pick a quiz type and title to start.` : `Nothing in the uploaded materials covers “${plan.topic}” yet.` }
+    reply = { ...base, autoQuiz: n > 0, note: n ? `Let’s see what you know! I picked ${plural(n, 'cell')} for your quiz. Choose a quiz type and give it a title.` : `I couldn’t find anything about “${plan.topic}” to quiz you on yet.` }
   } else reply = ask(index, input, plan, files, scope, restrict)
 
-  if (dropped.length && reply.note) reply.note += ` (No files are filed under ${dropped.join(', ')} yet, so all subjects were searched.)`
+  if (dropped.length && reply.note) reply.note += ` (Nothing is filed under ${dropped.join(', ')} yet, so I searched every subject.)`
+  // Talking to the instructor about their own files.
+  if (self && reply.note && plan.owners.length === 1 && plan.owners[0] === self) reply.note = reply.note.replace(`files by ${self}`, 'files you uploaded').replace(`file by ${self}`, 'file you uploaded').replace(`everything ${self} uploaded`, 'everything you uploaded')
   return { ...reply, note: typo + (reply.note ?? '') || undefined }
 }

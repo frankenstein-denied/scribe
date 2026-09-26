@@ -7,6 +7,7 @@ import { ArrowLeft, BookOpen, Check, Menu, RotateCcw, X } from 'lucide-react'
 import { StudentSidebar } from '@/components/student/sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { signOut, useSession } from '@/lib/session'
+import { ScribeWidget } from '@/components/scribe/assistant-widget'
 import { QUIZ_KINDS } from '@/lib/quiz'
 import { attemptsOf } from '@/lib/brain'
 import { gradeEnumeration, isAnswered, pointsFor, recordAttempt, reshuffleOptions, retakeOrder, score, type Response } from '@/lib/review'
@@ -199,5 +200,6 @@ export default function StudySetsPage() {
             </article>)}</div>}
         </>}
     </main>
+    <ScribeWidget user={user} mode="student" />
   </div>
 }

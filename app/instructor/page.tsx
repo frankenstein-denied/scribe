@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { AlertCircle, CheckCircle2, ExternalLink, FileText, Library, Loader2, LogOut, Maximize2, Network, Search, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import { FirebaseError } from 'firebase/app'
 import { signOut, useSession } from '@/lib/session'
+import { ScribeWidget } from '@/components/scribe/assistant-widget'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ACCEPT, extractText, formatOf, rejectReason, type Format } from '@/lib/extract'
 import { createMaterial, deleteFile, deleteMaterial, formatBytes, listMyMaterials, loadFile, saveChunks, saveFile, titleFromFileName, updateMaterial, type InstructorMaterial } from '@/lib/materials'
@@ -254,6 +255,6 @@ export default function InstructorDashboard() {
         </aside>}
       </section>}
     </main>
+    <ScribeWidget user={user} mode="instructor" />
   </div>
 }
-

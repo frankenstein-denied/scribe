@@ -9,6 +9,7 @@ import { StudentSidebar } from '@/components/student/sidebar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { NetLink, NetNode } from '@/components/graph/network-graph'
 import { signOut, useSession } from '@/lib/session'
+import { ScribeWidget } from '@/components/scribe/assistant-widget'
 import { archiveOpenChat, deleteChat, listChats, readCurrent, type ChatTurn, type RecentChat } from '@/lib/recents'
 import { listSets, type SavedStudySet } from '@/lib/studysets'
 import { attemptsOf, brainStats, buildBrain, PASS_MARK, sourceNodeId, STATUS_LABEL, type BrainNode, type QuizStatus } from '@/lib/brain'
@@ -173,6 +174,6 @@ export default function BrainPage() {
         </aside>}
       </section>
     </main>
+    <ScribeWidget user={user} mode="student" />
   </div>
 }
-
