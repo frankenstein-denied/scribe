@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// SCRIBE Firestore rules.
+// Everyone must be signed in with a verified @sorsu.edu.ph Google account.
+// Roles come from Firestore, never from what the app claims:
+//   admin      = has a doc in /admins/{email}          (add these by hand in the Firebase console)
+//   instructor = has a doc in /verifiedInstructors/{email} (managed by admins in the app)
+//   student    = any other @sorsu.edu.ph account
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email.lower(); }
+    function isSorsu() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && email().matches('^[^@]+@sorsu[.]edu[.]ph$');
+    }
+    function isAdmin() { return isSorsu() && exists(/databases/$(database)/documents/admins/$(email())); }
+    function isInstructor() { return isSorsu() && exists(/databases/$(database)/documents/verifiedInstructors/$(email())); }
+    function isOwner(uid) { return isSorsu() && request.auth.uid == uid; }
+    function unchanged(field) { return request.resource.data[field] == resource.data[field]; }
+
+    // ---- Admins: read-only from the app. Create them in the console: /admins/{email} ----
+    match /admins/{adminEmail} {
+      allow read: if isSorsu() && (adminEmail == email() || isAdmin());
+      allow write: if false;
+    }
+
+    // ---- Verified instructors: admins manage; an instructor may read their own entry ----
+    match /verifiedInstructors/{instructorEmail} {
+      allow read: if isSorsu() && (instructorEmail == email() || isAdmin());
+      allow create, update: if isAdmin()
+        && instructorEmail == request.resource.data.email
+        && instructorEmail.matches('^[^@]+@sorsu[.]edu[.]ph$')
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.source in ['manual', 'csv'];
+      allow delete: if isAdmin();
+    }
+
+    // ---- Users: private profile, study sets and chats ----
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      // The stored role must match what Firestore grants, so it can't be used to escalate.
+      allow create, update: if isOwner(uid)
+        && request.resource.data.email == email()
+        && request.resource.data.name is string
+        && request.resource.data.role in ['Student', 'Professor', 'Admin']
+        && (request.resource.data.role != 'Professor' || isInstructor())
+        && (request.resource.data.role != 'Admin' || isAdmin());
+      allow delete: if false;
+
+      match /studySets/{setId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 80
+          && request.resource.data.items is list
+          && request.resource.data.items.size() <= 50;
+      }
+
+      match /chats/{chatId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.title is string
+          && request.resource.data.turns is list;
+      }
+    }
+
+    // ---- Course materials: instructors upload, every SorSU user can read ----
+    match /materials/{materialId} {
+      allow read: if isSorsu();
+      allow create: if isInstructor()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerEmail == email()
+        && request.resource.data.status in ['processing', 'ready', 'failed'];
+      allow update: if isInstructor()
+        && resource.data.ownerUid == request.auth.uid
+        && unchanged('ownerUid') && unchanged('ownerEmail')
+        && request.resource.data.status in ['processing', 'ready', 'failed'];
+      // Owners can always clean up their own files, even after losing instructor access.
+      allow delete: if isSorsu() && resource.data.ownerUid == request.auth.uid;
+
+      // Extracted passages, split across a few docs to stay under Firestore's 1 MB limit.
+      match /content/{part} {
+        allow read: if isSorsu();
+        allow create, update: if isInstructor()
+          && get(/databases/$(database)/documents/materials/$(materialId)).data.ownerUid == request.auth.uid;
+        allow delete: if isSorsu()
+          && get(/databases/$(database)/documents/materials/$(materialId)).data.ownerUid == request.auth.uid;
+      }
+    }
+  }
+}
