@@ -4,6 +4,9 @@ minimumReleaseAgeExclude:
   - '@next/*'
   - next
 
+# Install scripts pnpm may run. Both are off: neither is needed to build or run SCRIBE.
+#   @firebase/util: only reads FIREBASE_WEBAPP_CONFIG for Firebase App Hosting; SCRIBE passes its config explicitly.
+#   protobufjs: only prints a version-scheme warning.
 allowBuilds:
-  '@firebase/util': set this to true or false
-  protobufjs: set this to true or false
+  '@firebase/util': false
+  protobufjs: false
