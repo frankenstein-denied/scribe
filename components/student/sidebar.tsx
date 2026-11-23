@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, Brain, ChevronLeft, FileText, LogOut, Menu, MoreHorizontal, Plus, Search, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
+import { BookOpen, Brain, ChevronLeft, Compass, FileText, LogOut, Menu, MoreHorizontal, Plus, Search, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import { HelpButton } from '@/components/help/help-guide'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { RecentChat } from '@/lib/recents'
 import type { User } from '@/types'
 
 export function StudentSidebar({ user, active, collapsed, setCollapsed, onNew, onLogout, recents, activeChatId, onOpenRecent, onDeleteRecent }: {
-  user: User; active: 'ask' | 'sets' | 'brain'; collapsed: boolean; setCollapsed: (v: boolean) => void; onNew?: () => void; onLogout: () => void
+  user: User; active: 'ask' | 'sets' | 'brain' | 'career'; collapsed: boolean; setCollapsed: (v: boolean) => void; onNew?: () => void; onLogout: () => void
   recents: RecentChat[]; activeChatId?: string | null; onOpenRecent: (id: string) => void; onDeleteRecent: (id: string) => void
 }) {
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -33,6 +33,7 @@ export function StudentSidebar({ user, active, collapsed, setCollapsed, onNew, o
         <Link className={`nav-item ${active === 'ask' ? 'active' : ''}`} href="/"><Sparkles /> Ask SCRIBE</Link>
         <Link className={`nav-item ${active === 'sets' ? 'active' : ''}`} href="/study-sets"><BookOpen /> Study sets</Link>
         <Link className={`nav-item ${active === 'brain' ? 'active' : ''}`} href="/brain"><Brain /> My 2nd brain</Link>
+        <Link className={`nav-item ${active === 'career' ? 'active' : ''}`} href="/career"><Compass /> Career match</Link>
         {user.role === 'Admin' && <><p className="nav-label">Admin</p><Link className="nav-item" href="/admin"><ShieldCheck /> Verified instructors</Link></>}
         {user.role === 'Professor' && <><p className="nav-label">For professors</p><Link className="nav-item" href="/instructor"><FileText /> My materials</Link><button className="nav-item"><Search /> Coverage</button></>}
       </nav>
