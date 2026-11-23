@@ -7,7 +7,6 @@ import { ScribeAvatar, SCRIBE_GREETING } from '@/components/scribe/avatar'
 import { respond } from '@/lib/assistant'
 import { loadLibrary, type Library } from '@/lib/library'
 import { buildIndex } from '@/lib/retrieval'
-import { termCounts } from '@/lib/topics'
 import type { AppUser } from '@/lib/session'
 
 // SCRIBE as a companion that stays with you on every dashboard: a floating avatar that greets you and opens a chat.
@@ -56,16 +55,6 @@ export function ScribeWidget({ user, mode }: { user: AppUser; mode: 'student' | 
 
   const index = useMemo(() => (library ? buildIndex(library.passages) : null), [library])
 
-  const chips = useMemo(() => {
-    if (!library?.materials.length) return []
-    if (mode === 'instructor') {
-      const mine = library.materials.filter(m => m.ownerName === user.name).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      return mine.length ? ['Give me everything I uploaded', 'What topics do my files cover?', `Make a reviewer from the ${mine[0].title} file`] : ['What topics are covered across all files?']
-    }
-    const topics = Object.keys(termCounts(library.passages.map(p => p.text).join('\n'), 30)).filter(t => t.includes(' '))
-    return [`Make a reviewer on ${topics[0] ?? 'the latest lecture'}`, `Quiz me on ${topics[1] ?? topics[0] ?? 'the latest lecture'}`, 'What topics are covered?']
-  }, [library, mode, user.name])
-
   const ask = (q: string) => {
     const question = q.trim()
     if (!question || !library || !index) return
@@ -107,7 +96,6 @@ export function ScribeWidget({ user, mode }: { user: AppUser; mode: 'student' | 
           </div></div>)}
         {loading && <div className="scribe-msg scribe"><ScribeAvatar badge size={28} /><div className="bubble typing"><Loader2 className="spin" /> Getting your course materials…</div></div>}
       </div>
-      {!!chips.length && messages.length < 2 && <div className="scribe-chips">{chips.map(c => <button key={c} onClick={() => ask(c)}>{c}</button>)}</div>}
       <form className="scribe-input" onSubmit={e => { e.preventDefault(); ask(input) }}>
         <input value={input} onChange={e => setInput(e.target.value)} placeholder={library ? 'Ask me anything…' : 'Loading…'} disabled={!library} aria-label="Message SCRIBE" />
         <button className="send-button" disabled={!input.trim() || !library} aria-label="Send"><Send /></button>

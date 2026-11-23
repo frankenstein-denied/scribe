@@ -15,7 +15,7 @@ import { respond } from '@/lib/assistant'
 import { makeQuestions, QUIZ_KINDS, suggestTitle, type QuizKind } from '@/lib/quiz'
 import { listSets, MAX_STUDY_SETS, putSet, type SavedStudySet } from '@/lib/studysets'
 import { archive, archiveOpenChat, chatKey, deleteChat, listChats, persistArchive, readCurrent, type ChatCell, type ChatPart, type ChatTurn, type RecentChat } from '@/lib/recents'
-import { termCounts, words } from '@/lib/topics'
+import { words } from '@/lib/topics'
 import { subjects, type User } from '@/types'
 import { Analytics } from "@vercel/analytics/next"  
 import './student.css'
@@ -138,23 +138,6 @@ export default function Page() {
   }, [])
 
   const index = useMemo(() => (library ? buildIndex(library.passages) : null), [library])
-  // Starter requests built from what's actually uploaded, showing off what SCRIBE understands.
-  const suggestions = useMemo(() => {
-    if (!library?.materials.length) return []
-    const counts = termCounts(library.passages.map(p => p.text).join('\n'), 40)
-    const phrases = Object.keys(counts).filter(t => t.includes(' '))
-    const topic = phrases[0] ?? Object.keys(counts)[0]
-    const byOwner = new Map<string, number>()
-    for (const m of library.materials) byOwner.set(m.ownerName, (byOwner.get(m.ownerName) ?? 0) + 1)
-    const owner = [...byOwner].sort((a, b) => b[1] - a[1])[0][0]
-    const newest = [...library.materials].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
-    return [
-      { q: `Make a reviewer on ${topic}`, code: 'Reviewer' },
-      { q: `Give me everything Prof. ${owner.split(' ')[0]} uploaded`, code: 'Browse files' },
-      { q: `Summarize the ${newest.title} file`, code: 'Summary' },
-      { q: `Quiz me on ${phrases[1] ?? topic}`, code: 'Quiz' },
-    ]
-  }, [library])
 
   // Cells are numbered across the whole conversation, like a notebook's execution counts.
   const numbering = useMemo(() => {
@@ -355,11 +338,10 @@ export default function Page() {
         {selecting && <p className="quiz-hint">Tick the cells to include. Questions are made only from the text in those cells.</p>}
         {!selecting && <>
           <div className={`composer ${!ready || empty ? 'disabled' : ''}`}>
-            <textarea value={input} disabled={!ready || empty} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); ask(input) } }} placeholder={empty ? 'No materials to ask about yet' : 'Ask a question, or try “make a reviewer on…”, “everything Prof. … uploaded”, “summarize…”, “quiz me on…”'} rows={1} aria-label="Question" />
+            <textarea value={input} disabled={!ready || empty} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); ask(input) } }} placeholder={empty ? 'No materials to ask about yet' : 'Ask a question…'} rows={1} aria-label="Question" />
             {scopeSubjects.length > 1 && <select className="scope-select" value={scope ?? ''} onChange={e => setScope(e.target.value || null)} aria-label="Limit to a subject"><option value="">All subjects</option>{scopeSubjects.map(s => <option key={s.id} value={s.id}>{s.code}</option>)}</select>}
             <button className="send-button" onClick={() => ask(input)} disabled={!input.trim() || !!running || !ready} aria-label="Send message"><Send /></button>
           </div>
-          {turns.length === 0 && suggestions.length > 0 && <div className="suggestions">{suggestions.map(s => <button key={s.q} onClick={() => ask(s.q)}><span>{s.q}</span><small>{s.code}</small></button>)}</div>}
           <p className="footer-note">SCRIBE only answers from uploaded CICT materials. Each cell shows the exact passage and page it came from.</p>
         </>}
       </div>
