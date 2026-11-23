@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, Brain, ChevronLeft, FileText, LogOut, Menu, MoreHorizontal, Plus, Search, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
+import { HelpButton } from '@/components/help/help-guide'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { RecentChat } from '@/lib/recents'
 import type { User } from '@/types'
@@ -50,7 +51,7 @@ export function StudentSidebar({ user, active, collapsed, setCollapsed, onNew, o
     </>}
     <div className="sidebar-bottom">
       <div className="profile"><div className="avatar">{initials}</div>{!collapsed && <div><strong>{user.name}</strong><span>{user.program} · {user.role}</span></div>}</div>
-      {!collapsed && <><button className="logout-button" onClick={onLogout}><LogOut /> Log out</button><ThemeToggle /></>}
+      {!collapsed && <><button className="logout-button" onClick={onLogout}><LogOut /> Log out</button><HelpButton defaultRole={user.role === 'Professor' ? 'Professor' : 'Student'} /><ThemeToggle /></>}
     </div>
   </aside>
 }

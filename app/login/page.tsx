@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { AlertCircle, GraduationCap, Loader2, Presentation, ShieldCheck } from 'lucide-react'
 import { auth, db, isSchoolEmail, SCHOOL_DOMAIN } from '@/lib/firebase'
 import { ScribeAvatar, SCRIBE_GREETING } from '@/components/scribe/avatar'
+import { HelpButton } from '@/components/help/help-guide'
 import { homeFor, signInWithGoogle } from '@/lib/session'
 import type { Role } from '@/types'
 
@@ -57,6 +58,7 @@ export default function LoginPage() {
   }
 
   return <main className="login-shell">
+    <header className="login-topbar"><HelpButton labelled defaultRole={role === 'Professor' ? 'Professor' : 'Student'} /></header>
     <div className="login-layout">
     <div className="login-hero">
       <p className="speech down">{SCRIBE_GREETING}<small>Sign in with your SorSU Google account to get started.</small></p>

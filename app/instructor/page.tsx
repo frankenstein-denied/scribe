@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle2, ExternalLink, FileText, Library, Loader2, Lo
 import { FirebaseError } from 'firebase/app'
 import { signOut, useSession } from '@/lib/session'
 import { ScribeWidget } from '@/components/scribe/assistant-widget'
+import { HelpButton } from '@/components/help/help-guide'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ACCEPT, extractText, formatOf, rejectReason, type Format } from '@/lib/extract'
 import { createMaterial, deleteFile, deleteMaterial, formatBytes, listMyMaterials, loadFile, saveChunks, saveFile, titleFromFileName, updateMaterial, type InstructorMaterial } from '@/lib/materials'
@@ -153,13 +154,14 @@ export default function InstructorDashboard() {
       <div className="sidebar-bottom">
         <div className="profile"><div className="avatar">{initials}</div><div><strong>{user.name}</strong><span>{user.program} · Instructor</span></div></div>
         <button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button>
+        <HelpButton defaultRole="Professor" />
         <ThemeToggle />
       </div>
     </aside>
 
     <main className="dash-main">
       <header className="dash-header">
-        <div className="mobile-only header-actions"><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
+        <div className="mobile-only header-actions"><HelpButton defaultRole="Professor" /><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
         <div><h1>{view === 'materials' ? 'My materials' : 'Knowledge graph'}</h1><p>{view === 'materials' ? 'Upload lecture files. SCRIBE reads them so students get answers from your materials.' : 'How your uploaded files connect through shared topics and subjects.'}</p></div>
         <div className="mobile-tabs"><button className={view === 'materials' ? 'active' : ''} onClick={() => setView('materials')}>Materials</button><button className={view === 'graph' ? 'active' : ''} onClick={() => setView('graph')}>Graph</button></div>
       </header>
