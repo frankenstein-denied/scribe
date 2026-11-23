@@ -22,7 +22,18 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     dialogRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onCloseRef.current(); return }
+      if (e.key !== 'Tab') return
+      const dialog = dialogRef.current
+      if (!dialog) return
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'))
+      if (!items.length) { e.preventDefault(); return }
+      const first = items[0], last = items[items.length - 1], active = document.activeElement
+      if (!dialog.contains(active) || active === dialog) { e.preventDefault(); (e.shiftKey ? last : first).focus() }
+      else if (e.shiftKey && active === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus() }
+    }
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)

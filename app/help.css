@@ -3,7 +3,7 @@
 .help-button svg { width:17px; height:17px; }
 .help-button.labelled { width:auto; border-radius:999px; padding:0 14px; gap:7px; font-size:13px; color:var(--accent); }
 
-.login-shell { position:relative; }
+.login-shell { position:relative; padding-top:72px; padding-bottom:72px; } /* own band for the topbar; symmetric so centering is unchanged */
 .login-topbar { position:absolute; top:0; right:0; left:0; display:flex; justify-content:flex-end; width:100%; padding:16px 20px 0; }
 
 .help-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; background:rgba(0,0,0,.5); padding:24px 16px; }
