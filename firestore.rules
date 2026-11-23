@@ -20,6 +20,13 @@ service cloud.firestore {
     function isInstructor() { return isSorsu() && exists(/databases/$(database)/documents/verifiedInstructors/$(email())); }
     function isOwner(uid) { return isSorsu() && request.auth.uid == uid; }
     function unchanged(field) { return request.resource.data[field] == resource.data[field]; }
+    // A new usage counter is absent or 1; an update may only add 0 or 1 to each counter.
+    function counterOk(f) { return !(f in request.resource.data) || request.resource.data[f] == 1; }
+    function before(f) { return f in resource.data ? resource.data[f] : 0; }
+    function stepOk(f) {
+      return !(f in request.resource.data)
+        || (request.resource.data[f] is int && request.resource.data[f] >= before(f) && request.resource.data[f] <= before(f) + 1);
+    }
 
     // ---- Admins: read-only from the app. Create them in the console: /admins/{email} ----
     match /admins/{adminEmail} {
@@ -92,6 +99,22 @@ service cloud.firestore {
         allow delete: if isSorsu()
           && get(/databases/$(database)/documents/materials/$(materialId)).data.ownerUid == request.auth.uid;
       }
+    }
+
+    // ---- Material usage: students' answers/quizzes/assistant replies that cited a file, counted per week ----
+    match /materialUsage/{usageId} {
+      allow read: if isSorsu() && (resource.data.ownerEmail == email() || isAdmin());
+      allow create: if isSorsu()
+        && usageId == request.resource.data.materialId + '_' + request.resource.data.week
+        && request.resource.data.ownerEmail == get(/databases/$(database)/documents/materials/$(request.resource.data.materialId)).data.ownerEmail
+        && request.resource.data.keys().hasOnly(['materialId', 'ownerEmail', 'week', 'answers', 'quizzes', 'assistant'])
+        && request.resource.data.week.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && counterOk('answers') && counterOk('quizzes') && counterOk('assistant');
+      allow update: if isSorsu()
+        && unchanged('materialId') && unchanged('ownerEmail') && unchanged('week')
+        && request.resource.data.keys().hasOnly(['materialId', 'ownerEmail', 'week', 'answers', 'quizzes', 'assistant'])
+        && stepOk('answers') && stepOk('quizzes') && stepOk('assistant');
+      allow delete: if false;
     }
   }
 }

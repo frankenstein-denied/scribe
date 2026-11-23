@@ -7,6 +7,7 @@ import { ScribeAvatar, SCRIBE_GREETING } from '@/components/scribe/avatar'
 import { respond } from '@/lib/assistant'
 import { loadLibrary, type Library } from '@/lib/library'
 import { buildIndex } from '@/lib/retrieval'
+import { recordUsage, usageTargets } from '@/lib/usage'
 import type { AppUser } from '@/lib/session'
 
 // SCRIBE as a companion that stays with you on every dashboard: a floating avatar that greets you and opens a chat.
@@ -60,6 +61,7 @@ export function ScribeWidget({ user, mode }: { user: AppUser; mode: 'student' | 
     if (!question || !library || !index) return
     const reply = respond(question, library, index, null, mode === 'instructor' ? user.name : undefined)
     const all = reply.parts.flatMap(p => p.cells)
+    void recordUsage('assistant', usageTargets(all.map(c => c.passage), library), user.email)
     const cells = all.slice(0, MAX_CELLS).map(c => ({
       heading: c.heading,
       excerpt: clip(c.excerpt.replace(/\n/g, ' · '), 220),

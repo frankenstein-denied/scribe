@@ -12,6 +12,7 @@ import { loadLibrary, type Library, type Passage } from '@/lib/library'
 import { loadFile } from '@/lib/materials'
 import { buildIndex, queryTerms, stem } from '@/lib/retrieval'
 import { respond } from '@/lib/assistant'
+import { recordUsage, usageTargets } from '@/lib/usage'
 import { makeQuestions, QUIZ_KINDS, suggestTitle, type QuizKind } from '@/lib/quiz'
 import { listSets, MAX_STUDY_SETS, putSet, type SavedStudySet } from '@/lib/studysets'
 import { archive, archiveOpenChat, chatKey, deleteChat, listChats, persistArchive, readCurrent, type ChatCell, type ChatPart, type ChatTurn, type RecentChat } from '@/lib/recents'
@@ -166,6 +167,7 @@ export default function Page() {
       label: part.label, query: part.query,
       cells: part.cells.map((c, ci) => ({ ...c, id: `${id}-${pi}-${ci}` })),
     }))
+    void recordUsage('answers', usageTargets(reply.parts.flatMap(p => p.cells.map(c => c.passage)), library), user?.email)
     setTurns(prev => [...prev, { id, question: question.trim(), scope, parts, intent: reply.intent, note: reply.note }])
     // A chat gets its id on the first question, so quizzes made from it can point back to it.
     if (!chatId) setChatId(crypto.randomUUID())
@@ -267,6 +269,7 @@ export default function Page() {
       setCreating(false)
       return setDialog({ ...dialog, error: 'Couldn’t save the quiz. Check your connection and try again.' })
     }
+    if (library) void recordUsage('quizzes', usageTargets(chosen.map(c => c.passage), library), user?.email)
     setCreating(false)
     setDialog(null); setSelecting(false); setSelected(new Set())
     setToast({ text: `“${title}” saved to Study sets with ${items.length} question${items.length === 1 ? '' : 's'}.`, setId: set.id })
