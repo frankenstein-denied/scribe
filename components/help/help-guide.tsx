@@ -7,7 +7,8 @@ import { GUIDE, type GuideRole } from '@/lib/guide'
 
 const ROLES: GuideRole[] = ['Student', 'Professor']
 
-export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: boolean; onClose: () => void; defaultRole?: GuideRole }) {
+/** `only` shows just `defaultRole`'s guide, with no role tabs (for signed-in users). */
+export function HelpGuide({ open, onClose, defaultRole = 'Student', only }: { open: boolean; onClose: () => void; defaultRole?: GuideRole; only?: boolean }) {
   const [role, setRole] = useState<GuideRole>(defaultRole)
   const [failed, setFailed] = useState<Record<string, boolean>>({})
   const dialogRef = useRef<HTMLElement>(null)
@@ -63,13 +64,13 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
     <div className="help-backdrop" onMouseDown={e => { downOnBackdrop.current = e.target === e.currentTarget }} onClick={e => { if (e.target === e.currentTarget && downOnBackdrop.current) onClose(); downOnBackdrop.current = false }}>
       <section ref={dialogRef} className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <header className="help-header">
-          <h2 id="help-title">How to use SCRIBE</h2>
+          <h2 id="help-title">{only ? `How to use SCRIBE as a ${defaultRole === 'Professor' ? 'professor' : 'student'}` : 'How to use SCRIBE'}</h2>
           <button type="button" className="help-close" aria-label="Close guide" onClick={onClose}><X /></button>
         </header>
-        <div className="help-tabs" role="tablist" aria-label="Choose your role">
+        {!only && <div className="help-tabs" role="tablist" aria-label="Choose your role">
           {ROLES.map((r, i) => <button key={r} ref={el => { tabRefs.current[r] = el }} id={`help-tab-${r}`} type="button" role="tab" aria-selected={role === r} aria-controls="help-panel" tabIndex={role === r ? 0 : -1} onKeyDown={e => onTabKey(e, i)} className={`help-tab ${role === r ? 'selected' : ''}`} onClick={() => setRole(r)}>{r}</button>)}
-        </div>
-        <div id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${role}`}>
+        </div>}
+        <div id="help-panel" {...(only ? {} : { role: 'tabpanel', 'aria-labelledby': `help-tab-${role}` })}>
         <p className="help-intro">{guide.intro}</p>
         <ol className="help-steps">
           {guide.steps.map((step, i) => <li key={step.image} className="help-step">
@@ -93,12 +94,12 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
   )
 }
 
-export function HelpButton({ defaultRole = 'Student', labelled, className }: { defaultRole?: GuideRole; labelled?: boolean; className?: string }) {
+export function HelpButton({ defaultRole = 'Student', only, labelled, className }: { defaultRole?: GuideRole; only?: boolean; labelled?: boolean; className?: string }) {
   const [open, setOpen] = useState(false)
   return <>
     <button type="button" className={`help-button ${labelled ? 'labelled' : ''} ${className ?? ''}`} aria-label="How to use SCRIBE" title="How to use SCRIBE" onClick={() => setOpen(true)}>
       <Info />{labelled && <span>How to use SCRIBE</span>}
     </button>
-    <HelpGuide open={open} onClose={() => setOpen(false)} defaultRole={defaultRole} />
+    <HelpGuide open={open} onClose={() => setOpen(false)} defaultRole={defaultRole} only={only} />
   </>
 }

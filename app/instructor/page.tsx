@@ -164,14 +164,14 @@ export default function InstructorDashboard() {
       <div className="sidebar-bottom">
         <div className="profile"><div className="avatar">{initials}</div><div><strong>{user.name}</strong><span>{user.program} · Instructor</span></div></div>
         <button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button>
-        <HelpButton defaultRole="Professor" />
+        <HelpButton defaultRole="Professor" only />
         <ThemeToggle />
       </div>
     </aside>
 
     <main className="dash-main">
       <header className="dash-header">
-        <div className="mobile-only header-actions"><HelpButton defaultRole="Professor" /><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
+        <div className="mobile-only header-actions"><HelpButton defaultRole="Professor" only /><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
         <div><h1>{TITLES[view]}</h1><p>{SUBTITLES[view]}</p></div>
         <div className="mobile-tabs"><button className={view === 'materials' ? 'active' : ''} onClick={() => showView('materials')}>Materials</button><button className={view === 'graph' ? 'active' : ''} onClick={() => showView('graph')}>Graph</button><button className={view === 'usage' ? 'active' : ''} onClick={() => showView('usage')}>Usage</button></div>
       </header>

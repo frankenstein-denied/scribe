@@ -52,7 +52,7 @@ export function StudentSidebar({ user, active, collapsed, setCollapsed, onNew, o
     </>}
     <div className="sidebar-bottom">
       <div className="profile"><div className="avatar">{initials}</div>{!collapsed && <div><strong>{user.name}</strong><span>{user.program} · {user.role}</span></div>}</div>
-      {!collapsed && <><button className="logout-button" onClick={onLogout}><LogOut /> Log out</button><HelpButton defaultRole={user.role === 'Professor' ? 'Professor' : 'Student'} /><ThemeToggle /></>}
+      {!collapsed && <><button className="logout-button" onClick={onLogout}><LogOut /> Log out</button><HelpButton defaultRole={user.role === 'Professor' ? 'Professor' : 'Student'} only={user.role !== 'Admin'} /><ThemeToggle /></>}
     </div>
   </aside>
 }
