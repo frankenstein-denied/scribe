@@ -4,6 +4,7 @@ import { THEME_BOOT_SCRIPT } from '@/lib/theme-boot'
 import './globals.css'
 import './scribe.css'
 import './help.css'
+import './heatmap.css'
 
 export const metadata: Metadata = {
   title: 'SCRIBE',

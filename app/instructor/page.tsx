@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertCircle, CheckCircle2, ExternalLink, FileText, Library, Loader2, LogOut, Maximize2, Network, Search, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ExternalLink, FileText, Flame, Library, Loader2, LogOut, Maximize2, Network, Search, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import { FirebaseError } from 'firebase/app'
 import { signOut, useSession } from '@/lib/session'
 import { ScribeWidget } from '@/components/scribe/assistant-widget'
@@ -16,12 +16,19 @@ import { termCounts } from '@/lib/topics'
 import { chunkPages } from '@/lib/chunks'
 import { analyze, buildGraph, NODE_COLORS, toNetwork, topicNodeId } from '@/lib/graph'
 import { subjects as allSubjects } from '@/types'
+import { UsageView } from '@/components/instructor/usage-view'
 import './dashboard.css'
 
 // Canvas + d3 only work in the browser.
 const KnowledgeGraph = dynamic(() => import('@/components/graph/network-graph'), { ssr: false, loading: () => <div className="graph-canvas graph-loading"><Loader2 className="spin" /></div> })
 
-type View = 'materials' | 'graph'
+type View = 'materials' | 'graph' | 'usage'
+const TITLES: Record<View, string> = { materials: 'My materials', graph: 'Knowledge graph', usage: 'Material usage' }
+const SUBTITLES: Record<View, string> = {
+  materials: 'Upload lecture files. SCRIBE reads them so students get answers from your materials.',
+  graph: 'How your uploaded files connect through shared topics and subjects.',
+  usage: 'How often SCRIBE used each of your files to answer students, build their quizzes and reply in the assistant. Darker squares mean more use that week.',
+}
 const FORMAT_LABEL: Record<Format, string> = { pdf: 'PDF', pptx: 'PPTX', docx: 'DOCX' }
 
 const pageCount = (m: InstructorMaterial) => `${m.pages} ${m.format === 'pptx' ? 'slide' : 'page'}${m.pages === 1 ? '' : 's'}`
@@ -46,6 +53,8 @@ export default function InstructorDashboard() {
   const [loaded, setLoaded] = useState(false)
   const [syncError, setSyncError] = useState('')
   const [view, setView] = useState<View>('materials')
+  const [usageOpened, setUsageOpened] = useState(false) // keeps the usage view mounted after first visit so it loads once
+  const showView = (v: View) => { setView(v); if (v === 'usage') setUsageOpened(true) }
   const [uploadSubject, setUploadSubject] = useState('')
   const [rejected, setRejected] = useState<{ name: string; reason: string }[]>([])
   const [dragging, setDragging] = useState(false)
@@ -147,8 +156,9 @@ export default function InstructorDashboard() {
       <div className="brand-row"><span className="brand">SCRIBE</span></div>
       <nav className="nav-list" aria-label="Instructor navigation">
         <p className="nav-label">Instructor</p>
-        <button className={`nav-item ${view === 'materials' ? 'active' : ''}`} onClick={() => setView('materials')}><Library /> My materials</button>
-        <button className={`nav-item ${view === 'graph' ? 'active' : ''}`} onClick={() => setView('graph')}><Network /> Knowledge graph</button>
+        <button className={`nav-item ${view === 'materials' ? 'active' : ''}`} onClick={() => showView('materials')}><Library /> My materials</button>
+        <button className={`nav-item ${view === 'graph' ? 'active' : ''}`} onClick={() => showView('graph')}><Network /> Knowledge graph</button>
+        <button className={`nav-item ${view === 'usage' ? 'active' : ''}`} onClick={() => showView('usage')}><Flame /> Material usage</button>
         <Link className="nav-item" href="/"><Sparkles /> Ask SCRIBE</Link>
       </nav>
       <div className="sidebar-bottom">
@@ -162,19 +172,20 @@ export default function InstructorDashboard() {
     <main className="dash-main">
       <header className="dash-header">
         <div className="mobile-only header-actions"><HelpButton defaultRole="Professor" /><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
-        <div><h1>{view === 'materials' ? 'My materials' : 'Knowledge graph'}</h1><p>{view === 'materials' ? 'Upload lecture files. SCRIBE reads them so students get answers from your materials.' : 'How your uploaded files connect through shared topics and subjects.'}</p></div>
-        <div className="mobile-tabs"><button className={view === 'materials' ? 'active' : ''} onClick={() => setView('materials')}>Materials</button><button className={view === 'graph' ? 'active' : ''} onClick={() => setView('graph')}>Graph</button></div>
+        <div><h1>{TITLES[view]}</h1><p>{SUBTITLES[view]}</p></div>
+        <div className="mobile-tabs"><button className={view === 'materials' ? 'active' : ''} onClick={() => showView('materials')}>Materials</button><button className={view === 'graph' ? 'active' : ''} onClick={() => showView('graph')}>Graph</button><button className={view === 'usage' ? 'active' : ''} onClick={() => showView('usage')}>Usage</button></div>
       </header>
 
       {syncError && <div className="reject-list" role="alert"><div><AlertCircle /><strong>{syncError}</strong><button className="icon-button" aria-label="Dismiss" onClick={() => setSyncError('')}><X /></button></div></div>}
-      <section className="stat-row" aria-label="Summary">
+      {view !== 'usage' && <section className="stat-row" aria-label="Summary">
         <div><strong>{materials.length}</strong><span>Files</span></div>
         <div><strong>{ready.length}</strong><span>Ready</span></div>
         <div><strong>{analysis.topics.size}</strong><span>Shared topics</span></div>
         <div><strong>{analysis.links.length}</strong><span>Connections</span></div>
-      </section>
+      </section>}
+      {usageOpened && <div hidden={view !== 'usage'}><UsageView materials={materials} ownerEmail={user.email} /></div>}
 
-      {view === 'materials' ? <>
+      {view === 'usage' ? null : view === 'materials' ? <>
         <section
           className={`dropzone ${dragging ? 'dragging' : ''}`}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
@@ -207,7 +218,7 @@ export default function InstructorDashboard() {
             <StatusPill m={m} />
             <select aria-label={`Subject for ${m.title}`} value={m.subjectId} onChange={e => patch(m.id, { subjectId: e.target.value })}><option value="">No subject</option>{subjects.map(s => <option key={s.id} value={s.id}>{s.code}</option>)}</select>
             <div className="row-actions">
-              {m.status === 'ready' && <button className="icon-button" aria-label={`Show ${m.title} in graph`} title="Show in graph" onClick={() => { setSelectedId(m.id); setView('graph') }}><Network /></button>}
+              {m.status === 'ready' && <button className="icon-button" aria-label={`Show ${m.title} in graph`} title="Show in graph" onClick={() => { setSelectedId(m.id); showView('graph') }}><Network /></button>}
               <button className="icon-button" aria-label={`Open ${m.title}`} title="Open file" onClick={() => open(m)}><ExternalLink /></button>
               <button className="icon-button danger" aria-label={`Remove ${m.title}`} title="Remove" onClick={() => remove(m.id)}><Trash2 /></button>
             </div>
@@ -221,7 +232,7 @@ export default function InstructorDashboard() {
         </div>
         <div className="graph-stage">
           {ready.length === 0
-            ? <div className="empty-materials"><Network /><strong>Nothing to map yet</strong><span>Upload materials and your graph will appear here once they&apos;re read.</span><button className="outline-button" onClick={() => setView('materials')}>Upload materials</button></div>
+            ? <div className="empty-materials"><Network /><strong>Nothing to map yet</strong><span>Upload materials and your graph will appear here once they&apos;re read.</span><button className="outline-button" onClick={() => showView('materials')}>Upload materials</button></div>
             : <KnowledgeGraph nodes={graph.nodes} links={graph.links} selectedId={selectedId} query={query} onSelect={setSelectedId} fitSignal={fitSignal} />}
           <div className="graph-legend" aria-label="Legend">
             {(['pdf', 'pptx', 'docx'] as Format[]).map(f => <span key={f}><i style={{ background: NODE_COLORS[f] }} />{FORMAT_LABEL[f]}</span>)}
