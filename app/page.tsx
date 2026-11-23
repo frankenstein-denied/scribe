@@ -167,7 +167,7 @@ export default function Page() {
       label: part.label, query: part.query,
       cells: part.cells.map((c, ci) => ({ ...c, id: `${id}-${pi}-${ci}` })),
     }))
-    void recordUsage('answers', usageTargets(reply.parts.flatMap(p => p.cells.map(c => c.passage)), library), user?.email)
+    if (reply.intent !== 'browse' && reply.intent !== 'topics') void recordUsage('answers', usageTargets(reply.parts.flatMap(p => p.cells.map(c => c.passage)), library), user?.email)
     setTurns(prev => [...prev, { id, question: question.trim(), scope, parts, intent: reply.intent, note: reply.note }])
     // A chat gets its id on the first question, so quizzes made from it can point back to it.
     if (!chatId) setChatId(crypto.randomUUID())

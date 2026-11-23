@@ -100,7 +100,7 @@ export default function CareerPage() {
             <div className="career-mixkey">{MIX_KEY.map(([k, l]) => <span key={k}><b style={{ background: MIX_COLOR[k] }} />{l}</span>)}</div>
 
             <div className="hm-filters">
-              <div className="seg" role="group" aria-label="Time range">
+              <div className="hm-seg" role="group" aria-label="Time range">
                 <button type="button" aria-pressed={range === 'all'} onClick={() => setRange('all')}>This semester</button>
                 <button type="button" aria-pressed={range === 'recent'} onClick={() => setRange('recent')}>Last 30 days</button>
               </div>

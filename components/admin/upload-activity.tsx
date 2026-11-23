@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { FirebaseError } from 'firebase/app'
 import { AlertCircle, Flame, Lightbulb, Loader2 } from 'lucide-react'
 import { Heatmap, type HeatRow } from '@/components/heatmap/heatmap'
 import { listAllMaterials, type InstructorMaterial } from '@/lib/materials'
@@ -13,14 +14,14 @@ const weekLabel = (key: string) => { const [y, m, d] = key.split('-').map(Number
 const uploads = (n: number) => `${n} ${n === 1 ? 'upload' : 'uploads'}`
 const files = (n: number) => `${n} ${n === 1 ? 'file' : 'files'}`
 
-export function UploadActivity({ instructors }: { instructors: VerifiedInstructor[] }) {
+export function UploadActivity({ instructors, loading = false, loadError = '' }: { instructors: VerifiedInstructor[]; loading?: boolean; loadError?: string }) {
   const [materials, setMaterials] = useState<InstructorMaterial[] | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<'' | 'denied' | 'failed'>('')
   const [range, setRange] = useState(8)
 
   useEffect(() => {
     let live = true
-    listAllMaterials().then(r => { if (live) setMaterials(r) }).catch(() => { if (live) setError(true) })
+    listAllMaterials().then(r => { if (live) setMaterials(r) }).catch(e => { if (live) setError(e instanceof FirebaseError && e.code === 'permission-denied' ? 'denied' : 'failed') })
     return () => { live = false }
   }, [])
 
@@ -46,8 +47,9 @@ export function UploadActivity({ instructors }: { instructors: VerifiedInstructo
     return { id: v.email, label: v.name, sub: v.email, cells, total: totalValue, totalValue }
   }).sort((a, b) => (b.totalValue ?? 0) - (a.totalValue ?? 0) || a.label.localeCompare(b.label)), [instructors, perOwner, weeks])
 
-  if (error) return <div className="hm-empty error" role="alert"><AlertCircle /><strong>Couldn’t load uploads. Check your connection and reload the page.</strong></div>
-  if (!materials) return <div className="hm-empty" role="status"><Loader2 className="spin" /><span>Loading uploads…</span></div>
+  if (error) return <div className="hm-empty error" role="alert"><AlertCircle /><strong>{error === 'denied' ? 'You don’t have access to upload data. Ask your CICT admin to check your admin access.' : 'Couldn’t load uploads. Check your connection and reload the page.'}</strong></div>
+  if (loadError) return <div className="hm-empty error" role="alert"><AlertCircle /><strong>{loadError}</strong></div>
+  if (!materials || loading) return <div className="hm-empty" role="status"><Loader2 className="spin" /><span>Loading uploads…</span></div>
   if (instructors.length === 0) return <div className="hm-empty"><Flame /><strong>No verified instructors yet.</strong><span>Add instructors on the Verified instructors page and their uploads will appear here.</span></div>
 
   const top = rows[0]
@@ -57,15 +59,15 @@ export function UploadActivity({ instructors }: { instructors: VerifiedInstructo
   const scope = range < 16 ? 'in this range' : 'this semester'
 
   return <div className="hm-page">
-    <div className="tiles">
-      <div className="tile"><strong className="txt">{top && top.totalValue ? top.label : 'None yet'}</strong><span>Most uploads{top && top.totalValue ? ` · ${files(top.totalValue)}` : ''}</span></div>
-      <div className="tile"><strong>{sum}</strong><span>Files uploaded in range</span></div>
-      <div className="tile"><strong>{instructors.length}</strong><span>Verified instructors</span></div>
-      <div className="tile"><strong>{none}</strong><span>Instructors with no uploads</span></div>
+    <div className="hm-tiles">
+      <div className="hm-tile"><strong className="hm-txt">{top && top.totalValue ? top.label : 'None yet'}</strong><span>Most uploads{top && top.totalValue ? ` · ${files(top.totalValue)}` : ''}</span></div>
+      <div className="hm-tile"><strong>{sum}</strong><span>Files uploaded in range</span></div>
+      <div className="hm-tile"><strong>{instructors.length}</strong><span>Verified instructors</span></div>
+      <div className="hm-tile"><strong>{none}</strong><span>Instructors with no uploads</span></div>
     </div>
 
     <div className="hm-filters">
-      <div className="seg" role="group" aria-label="Time range">
+      <div className="hm-seg" role="group" aria-label="Time range">
         {RANGES.map(([v, l]) => <button key={v} type="button" aria-pressed={range === v} onClick={() => setRange(v)}>{l}</button>)}
       </div>
     </div>
@@ -81,6 +83,6 @@ export function UploadActivity({ instructors }: { instructors: VerifiedInstructo
       />
     </section>
 
-    {none > 0 && quiet && <div className="insight"><Lightbulb aria-hidden="true" /><span><b>{quiet.label}</b> hasn’t uploaded any files {scope}, so students can’t get answers from their materials yet.</span></div>}
+    {none > 0 && quiet && <div className="hm-insight"><Lightbulb aria-hidden="true" /><span><b>{quiet.label}</b> hasn’t uploaded any files {scope}, so students can’t get answers from their materials yet.</span></div>}
   </div>
 }

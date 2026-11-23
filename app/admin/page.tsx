@@ -140,7 +140,7 @@ export default function AdminDashboard() {
         <div className="mobile-tabs"><button className={view === 'verified' ? 'active' : ''} onClick={() => showView('verified')}>Verified</button><button className={view === 'uploads' ? 'active' : ''} onClick={() => showView('uploads')}>Uploads</button></div>
       </header>
 
-      {uploadsOpened && <div hidden={view !== 'uploads'}><UploadActivity instructors={list} /></div>}
+      {uploadsOpened && <div hidden={view !== 'uploads'}><UploadActivity instructors={list} loading={loading} loadError={loadError} /></div>}
 
       {view === 'verified' && <>
       {notice && <div className={`admin-notice ${notice.error ? 'error' : ''}`} role={notice.error ? 'alert' : 'status'}>

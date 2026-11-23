@@ -61,7 +61,7 @@ export function ScribeWidget({ user, mode }: { user: AppUser; mode: 'student' | 
     if (!question || !library || !index) return
     const reply = respond(question, library, index, null, mode === 'instructor' ? user.name : undefined)
     const all = reply.parts.flatMap(p => p.cells)
-    void recordUsage('assistant', usageTargets(all.map(c => c.passage), library), user.email)
+    if (reply.intent !== 'browse' && reply.intent !== 'topics') void recordUsage('assistant', usageTargets(all.map(c => c.passage), library), user.email)
     const cells = all.slice(0, MAX_CELLS).map(c => ({
       heading: c.heading,
       excerpt: clip(c.excerpt.replace(/\n/g, ' · '), 220),

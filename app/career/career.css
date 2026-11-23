@@ -1,4 +1,4 @@
-/* Career match page. Shared heatmap pieces (tiles, seg, hm-card, legend) live in app/heatmap.css. */
+/* Career match page. Shared heatmap pieces (hm-tiles, hm-seg, hm-card, hm-legend) live in app/heatmap.css. */
 .career-based { margin-top:4px !important; font-size:12.5px !important; color:var(--muted-2) !important; }
 
 .career-top3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }

@@ -21,7 +21,7 @@ service cloud.firestore {
     function isOwner(uid) { return isSorsu() && request.auth.uid == uid; }
     function unchanged(field) { return request.resource.data[field] == resource.data[field]; }
     // A new usage counter is absent or 1; an update may only add 0 or 1 to each counter.
-    function counterOk(f) { return !(f in request.resource.data) || request.resource.data[f] == 1; }
+    function counterOk(f) { return !(f in request.resource.data) || (request.resource.data[f] is int && request.resource.data[f] == 1); }
     function before(f) { return f in resource.data ? resource.data[f] : 0; }
     function stepOk(f) {
       return !(f in request.resource.data)
