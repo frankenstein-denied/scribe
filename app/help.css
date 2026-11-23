@@ -7,7 +7,7 @@
 .login-topbar { position:absolute; top:0; right:0; left:0; display:flex; justify-content:flex-end; width:100%; padding:16px 20px 0; }
 
 .help-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; background:rgba(0,0,0,.5); padding:24px 16px; }
-.help-dialog { width:min(760px, calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden; background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:16px; padding:22px; outline:none; }
+.help-dialog { width:min(760px, calc(100vw - 32px)); max-height:calc(100vh - 48px); max-height:calc(100dvh - 48px); overflow-y:auto; overflow-x:hidden; background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:16px; padding:22px; outline:none; }
 .help-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .help-header h2 { margin:0; font-family:Georgia, serif; font-weight:400; font-size:24px; color:var(--maroon-900); }
 .help-close { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:50%; background:var(--surface); color:var(--muted); cursor:pointer; padding:0; }
@@ -32,7 +32,7 @@
 
 @media (max-width:600px) {
   .help-backdrop { padding:16px; }
-  .help-dialog { width:calc(100vw - 32px); max-height:calc(100vh - 32px); padding:16px; }
+  .help-dialog { width:calc(100vw - 32px); max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); padding:16px; }
   .help-tabs { width:100%; }
   .help-tab { flex:1; padding:7px 10px; }
   .help-step { gap:10px; }

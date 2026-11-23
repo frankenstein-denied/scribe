@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Info, X } from 'lucide-react'
 import { GUIDE, type GuideRole } from '@/lib/guide'
@@ -14,7 +14,21 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
-  useEffect(() => { if (open) setRole(defaultRole) }, [open, defaultRole])
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) { setPrevOpen(open); if (open) setRole(defaultRole) }
+  const downOnBackdrop = useRef(false)
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const onTabKey = (e: ReactKeyboardEvent, i: number) => {
+    let next = -1
+    if (e.key === 'ArrowRight') next = (i + 1) % ROLES.length
+    else if (e.key === 'ArrowLeft') next = (i - 1 + ROLES.length) % ROLES.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = ROLES.length - 1
+    if (next < 0) return
+    e.preventDefault()
+    setRole(ROLES[next])
+    tabRefs.current[ROLES[next]]?.focus()
+  }
 
   useEffect(() => {
     if (!open) return
@@ -46,15 +60,16 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
   const guide = GUIDE[role]
 
   return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
+    <div className="help-backdrop" onMouseDown={e => { downOnBackdrop.current = e.target === e.currentTarget }} onClick={e => { if (e.target === e.currentTarget && downOnBackdrop.current) onClose(); downOnBackdrop.current = false }}>
       <section ref={dialogRef} className="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title" tabIndex={-1} onClick={e => e.stopPropagation()}>
         <header className="help-header">
           <h2 id="help-title">How to use SCRIBE</h2>
           <button type="button" className="help-close" aria-label="Close guide" onClick={onClose}><X /></button>
         </header>
         <div className="help-tabs" role="tablist" aria-label="Choose your role">
-          {ROLES.map(r => <button key={r} type="button" role="tab" aria-selected={role === r} className={`help-tab ${role === r ? 'selected' : ''}`} onClick={() => setRole(r)}>{r}</button>)}
+          {ROLES.map((r, i) => <button key={r} ref={el => { tabRefs.current[r] = el }} id={`help-tab-${r}`} type="button" role="tab" aria-selected={role === r} aria-controls="help-panel" tabIndex={role === r ? 0 : -1} onKeyDown={e => onTabKey(e, i)} className={`help-tab ${role === r ? 'selected' : ''}`} onClick={() => setRole(r)}>{r}</button>)}
         </div>
+        <div id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${role}`}>
         <p className="help-intro">{guide.intro}</p>
         <ol className="help-steps">
           {guide.steps.map((step, i) => <li key={step.image} className="help-step">
@@ -71,6 +86,7 @@ export function HelpGuide({ open, onClose, defaultRole = 'Student' }: { open: bo
             </div>
           </li>)}
         </ol>
+        </div>
       </section>
     </div>,
     document.body,
