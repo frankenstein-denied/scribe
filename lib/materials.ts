@@ -39,6 +39,11 @@ export async function listReadyMaterials(): Promise<InstructorMaterial[]> {
   return snap.docs.map(d => d.data() as InstructorMaterial)
 }
 
+export async function listAllMaterials(): Promise<InstructorMaterial[]> {
+  const snap = await getDocs(materials())
+  return snap.docs.map(d => d.data() as InstructorMaterial)
+}
+
 export const createMaterial = (m: InstructorMaterial) => setDoc(doc(materials(), m.id), m)
 export const updateMaterial = (id: string, change: Partial<InstructorMaterial>) => updateDoc(doc(materials(), id), change)
 

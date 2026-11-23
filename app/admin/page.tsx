@@ -3,15 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, LogOut, Search, ShieldCheck, Sparkles, Trash2, Undo2, UserPlus, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Flame, LogOut, Search, ShieldCheck, Sparkles, Trash2, Undo2, UserPlus, X } from 'lucide-react'
 import { signOut, useSession } from '@/lib/session'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { applyImport, CSV_TEMPLATE, cleanName, manualEntryError, normalizeEmail, planImport, SCHOOL_SUFFIX, type ImportPlan, type VerifiedInstructor } from '@/lib/verified'
 import { addVerified, commitImport, listVerified, removeVerified, restoreVerified } from '@/lib/verified-store'
+import { UploadActivity } from '@/components/admin/upload-activity'
 import '../instructor/dashboard.css'
 import './admin.css'
 
 const SOURCE_LABEL: Record<VerifiedInstructor['source'], string> = { manual: 'Added manually', csv: 'CSV import' }
+type View = 'verified' | 'uploads'
+const TITLES: Record<View, string> = { verified: 'Verified instructors', uploads: 'Upload activity' }
+const SUBTITLES: Record<View, string> = {
+  verified: 'Only these Google accounts can sign in as Professor / Instructor. Anyone else is turned away at login.',
+  uploads: 'How many files each verified instructor uploaded, week by week. Darker squares mean more uploads.',
+}
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 export default function AdminDashboard() {
@@ -30,6 +37,9 @@ export default function AdminDashboard() {
   const [dragging, setDragging] = useState(false)
   const [query, setQuery] = useState('')
   const csvInput = useRef<HTMLInputElement>(null)
+  const [view, setView] = useState<View>('verified')
+  const [uploadsOpened, setUploadsOpened] = useState(false) // keeps the view mounted after first visit so it loads once
+  const showView = (v: View) => { setView(v); if (v === 'uploads') setUploadsOpened(true) }
 
   useEffect(() => {
     if (!user) return
@@ -112,7 +122,8 @@ export default function AdminDashboard() {
       <div className="brand-row"><span className="brand">SCRIBE</span></div>
       <nav className="nav-list" aria-label="Admin navigation">
         <p className="nav-label">Admin</p>
-        <span className="nav-item active"><ShieldCheck /> Verified instructors</span>
+        <button className={`nav-item ${view === 'verified' ? 'active' : ''}`} onClick={() => showView('verified')}><ShieldCheck /> Verified instructors</button>
+        <button className={`nav-item ${view === 'uploads' ? 'active' : ''}`} onClick={() => showView('uploads')}><Flame /> Upload activity</button>
         <Link className="nav-item" href="/"><Sparkles /> Ask SCRIBE</Link>
       </nav>
       <div className="sidebar-bottom">
@@ -125,9 +136,13 @@ export default function AdminDashboard() {
     <main className="dash-main">
       <header className="dash-header">
         <div className="mobile-only header-actions"><ThemeToggle compact /><button className="logout-button" onClick={() => signOut().then(() => router.replace('/login'))}><LogOut /> Log out</button></div>
-        <div><h1>Verified instructors</h1><p>Only these Google accounts can sign in as Professor / Instructor. Anyone else is turned away at login.</p></div>
+        <div><h1>{TITLES[view]}</h1><p>{SUBTITLES[view]}</p></div>
+        <div className="mobile-tabs"><button className={view === 'verified' ? 'active' : ''} onClick={() => showView('verified')}>Verified</button><button className={view === 'uploads' ? 'active' : ''} onClick={() => showView('uploads')}>Uploads</button></div>
       </header>
 
+      {uploadsOpened && <div hidden={view !== 'uploads'}><UploadActivity instructors={list} /></div>}
+
+      {view === 'verified' && <>
       {notice && <div className={`admin-notice ${notice.error ? 'error' : ''}`} role={notice.error ? 'alert' : 'status'}>
         {notice.error ? <AlertCircle /> : <CheckCircle2 />}<span>{notice.text}</span>
         {notice.undo && <button className="text-link" onClick={() => undo(notice.undo!)}><Undo2 /> Undo</button>}
@@ -191,6 +206,7 @@ export default function AdminDashboard() {
               <button className="icon-button danger" aria-label={`Remove ${v.name}`} title="Remove access" onClick={() => remove(v)}><Trash2 /></button>
             </li>)}</ul>}
       </section>
+      </>}
     </main>
   </div>
 }
